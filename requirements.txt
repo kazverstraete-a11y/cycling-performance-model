@@ -1,0 +1,17 @@
+pandas
+numpy
+scipy
+
+scikit-learn
+
+matplotlib
+seaborn
+
+shap
+
+tqdm
+
+pyarrow
+fastparquet
+
+fitdecode
