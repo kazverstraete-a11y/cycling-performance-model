@@ -46,8 +46,8 @@ This project takes a different approach: instead of averaging training, it recon
 
 This repository is the code companion to a two-part Medium case study:
 
-- Part 1: From Raw FIT Files to Structured Training Data
-- Part 2: From Data to Physiology: What Actually Makes an Athlete Better?
+- [Part 1: From Raw FIT Files to Structured Training Data](https://medium.com/@kaz.verstraete/from-raw-fit-files-to-structured-training-data-building-an-end-to-end-data-pipeline-for-sports-5bf17c28240c)
+- [Part 2: From Data to Physiology: What Actually Makes an Athlete Better?](https://medium.com/@kaz.verstraete/from-data-to-physiology-what-actually-makes-an-athlete-better-8e808f01327e)
 
 ## Limitations
 
