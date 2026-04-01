@@ -1,11 +1,3 @@
-# --------------------------------------------------------------
-# --------------------------------------------------------------
-# ---------  !!!! NEEDS TO BE EXECUTED IN MAMBA !!!!!!  --------
-# --------------------------------------------------------------
-# --------------------------------------------------------------
-
-# terminal: bash conda activate fit_env
-
 import fitdecode
 import pandas as pd
 import os
@@ -18,12 +10,11 @@ OUTPUT_DIR = 'parquet_files'
 if not os.path.exists(OUTPUT_DIR): 
     os.makedirs(OUTPUT_DIR)
 
-# --------------------------  Magic Numbers --------------------
-count=0
 
 # ----------------------------------------------------------------
 # ------------------------------------- MAIN LOOP ----------------
 # ----------------------------------------------------------------
+count=0
 print(f"Start met het verwerken van {DATA_DIR}....")
 
 files = [f for f in os.listdir(DATA_DIR) if f.lower().endswith('.fit')]
@@ -56,13 +47,7 @@ for filename in tqdm(files, desc="Verwerking"):
         except Exception as e:
             print(f"\nError bij {filename}: {e}")
         
-    
-
 # ------------------------------------------------------------------------------------------
-# ------------------------------ UPDATE ALEX_OVERVIEW.sqlite -------------------------------
-# ------------------------------------------------------------------------------------------
-
-
 print("\n\n")
 print("-"*50)
 print(f"Klaar! Alle {count} bestanden staan in de {OUTPUT_DIR} map.")
