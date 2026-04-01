@@ -3,7 +3,8 @@ import sqlite3
 # ---------------------------------------------------------
 # -------------------------- CONNECT ----------------------
 # ---------------------------------------------------------
-db = 'bert_2_overview.sqlite'
+
+db = 'overview.sqlite'
 conn = sqlite3.connect(db)
 cur = conn.cursor()
 
