@@ -8,16 +8,19 @@ db_path = 'overview.sqlite'
 # -----------------------------------------------------------------------------------------
 # ------------------------------------- FETCH DATA  ---------------------------------------
 # -----------------------------------------------------------------------------------------
-print("\n Retrieving data from SQL: 'overview.sqlite'")
+print(f"\n Retrieving data from SQL: {db_path}")
 conn = sqlite3.connect(db_path)
 
 # Calendar
-calendar_df = pd.read_sql('SELECT datum, strenght_yesterday, avg_temperature, start_uur, CTL, ATL, FORM FROM calendar', conn)
+calendar_df = pd.read_sql('SELECT datum, cross_load_yesterday, avg_temperature, startuur, CTL, ATL, FORM FROM calendar', conn)
 calendar_df['datum'] = pd.to_datetime(calendar_df['datum']).dt.date
+
+calendar_df['cross_7d_ewma'] = calendar_df['cross_load_yesterday'].ewm(halflife=7, adjust=False).mean().shift(1).fillna(0)
+calendar_df['cross_28d_ewma'] = calendar_df['cross_load_yesterday'].ewm(halflife=28, adjust=False).mean().shift(1).fillna(0)
+calendar_df['cross_42_ewma'] = calendar_df['cross_load_yesterday'].ewm(halflife=42, adjust=False).mean().shift(1).fillna(0)
 
 # Intervals
 df_load = pd.read_sql('SELECT * FROM intervals', conn)
-
 conn.close()
 
 df_load['starttijd'] = pd.to_datetime(df_load['starttijd'], utc=True).dt.normalize()
@@ -88,7 +91,6 @@ ml_df.to_sql('final_table', conn, if_exists='replace', index=False)
 conn.close()
 
 ml_df['datum'] = pd.to_datetime(ml_df['datum'])
-ml_df.to_parquet('ml_dataset_final.parquet', index=False)
+ml_df.to_parquet('bert_ml_dataset_final.parquet', index=False)
 
 print("\n FINISHED:\n -------> SQL updated\n -------> Dataset stored as: 'ml_dataset_final.parquet'.")
-
