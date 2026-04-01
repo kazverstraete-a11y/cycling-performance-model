@@ -10,7 +10,7 @@ from fitparse import FitFile
 # --------------------- SQL DB SETUP --------------------
 # -------------------------------------------------------
 
-conn = sqlite3.connect('bert_2_overview.sqlite')
+conn = sqlite3.connect('overview.sqlite')
 cur = conn.cursor()
 
 cur.executescript('''
