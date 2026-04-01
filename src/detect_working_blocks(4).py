@@ -1,11 +1,3 @@
-#-------------------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------------------
-#----------------------- !!!! NEEDS TO BE EXECUTED IN MAMBA !!!!!!  ------------------------
-#-------------------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------------------
-
-# terminal: bash conda activate fit_env
-
 import pandas as pd
 import os
 import sqlite3
@@ -85,17 +77,15 @@ def calc_hr_stress(df, ATHLETE_THHR):
     return df
 
 # ------------------------------------  Folders  -------------------------------------------
-db_path = 'bert_2_overview.sqlite'
+db_path = 'overview.sqlite'
 parquet_folder = 'parquet_files'
 # ------------------------------------   Lists  --------------------------------------------
 power_files_with_errors = []
 hr_files_with_errors = []
 sql_db_updates=[]
-
 # ----------------------------------- Magic Numbers ----------------------------------------
 TRIMP_WEIGHTS = {'z1': 1, 'z2': 2, 'z3': 3, 'z4': 4, 'z5':5}
 AER_DREM = 0.7999999999999
-
 # -----------------------------------    Initiate  -----------------------------------------
 files, metadata_dict = metadata_fetcher(db_path)
 
@@ -195,12 +185,12 @@ if hr_files_with_errors:
         print(f" - {error}")
     
 # ------------------------------------------------------------------------------------------
-# ------------------------------ UPDATE ALEX_OVERVIEW.sqlite -------------------------------
+# ------------------------------ UPDATE OVERVIEW.sqlite -------------------------------
 # ------------------------------------------------------------------------------------------
 
 print("\n\n\nAlle bestanden verwerkt. Bezig met updaten van de database....")
 
-conn = sqlite3.connect('bert_2_overview.sqlite')
+conn = sqlite3.connect('overview.sqlite')
 cur = conn.cursor()
 
 try:
@@ -218,9 +208,9 @@ cur.executemany(update_query, sql_db_updates)
 
 print("Database succesvol bijgewerkt met eTRIMP Scores")
 # ------------------------------------------------------------------------------------------
-# ------------------------------  CLEANUP (FALLBACK VOOR GLITCHES) -------------------------
+# ------------------------------  CLEANUP / FALLBACK ---------------------------------------
 # ------------------------------------------------------------------------------------------
-print("\nBezig met het opschonen van lege bestanden (watch glitches)...")
+print("\nBezig met het opschonen van lege bestanden...")
 
 cleanup_query = """
     UPDATE Ritten
