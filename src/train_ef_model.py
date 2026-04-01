@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -9,25 +10,25 @@ from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.model_selection import KFold, cross_val_predict
 from sklearn.linear_model import LinearRegression
 
-
 # ------------------------------------------------------------------------------------------
 # --------------------------------- INITIATE & CLEANING -----------------------------------
 # ------------------------------------------------------------------------------------------
 
-ml_df = pd.read_parquet("alex_ml_dataset_final.parquet")
+ml_df = pd.read_parquet("dataset_final.parquet")
+
+ml_df.replace([np.inf, -np.inf], np.nan, inplace=True)
 
 TARGET = "target_race_EF"
 
 train_df = ml_df.dropna(subset=[TARGET]).copy()
 
-other_features = ["strenght_yesterday", "CTL", "ATL", "avg_temperature", "start_uur"]
+other_features = ["CTL", "ATL", "avg_temperature", "startuur"]
 X_cols = [col for col in train_df.columns if "_ewma" in col or col in other_features]
 
 X = train_df[X_cols].reset_index(drop=True)
 y = train_df[TARGET].reset_index(drop=True)
 
 print(f"\nTraining EF model on {len(train_df)} observations...")
-
 
 # ------------------------------------------------------------------------------------------
 # ------------------------------ VALIDATION: 5-FOLD CV ------------------------------------
@@ -50,7 +51,6 @@ results = pd.DataFrame({
     "Predicted": y_pred
 })
 print(results.head(20))
-
 
 # ------------------------------------------------------------------------------------------
 # ---------------------------- SCATTER: TRUE VS PREDICTED ---------------------------------
@@ -92,7 +92,6 @@ plt.title(f"Top 15 Most Important Features for {TARGET}")
 plt.tight_layout()
 plt.show()
 
-
 # ------------------------------------------------------------------------------------------
 # --------------------------- STATISTICS: r & p on top features ----------------------------
 # ------------------------------------------------------------------------------------------
@@ -130,14 +129,13 @@ df_tableau = pd.DataFrame({
     "Feature_Value": df_X_long["Feature_Value"]
 })
 
-# df_tableau.to_csv("shap_values_ef.csv", index=False, sep=';')
+df_tableau.to_csv("shap_values_ef.csv", index=False, sep=';')
 
 plt.figure(figsize=(12, 8))
 plt.title(f"SHAP Summary: Impact on {TARGET}", fontsize=14, pad=20)
 shap.summary_plot(shap_values, X, max_display=15, show=False)
 plt.tight_layout()
 plt.show()
-
 
 # ------------------------------------------------------------------------------------------
 # ------------------------- LINEAR REGRESSION FOR TABLEAU SLIDERS --------------------------
