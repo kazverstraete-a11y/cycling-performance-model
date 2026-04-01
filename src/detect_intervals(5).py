@@ -1,22 +1,17 @@
-#-------------------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------------------
-#----------------------- !!!! NEEDS TO BE EXECUTED IN MAMBA !!!!!!  ------------------------
-#-------------------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------------------
-# terminal: bash conda activate fit_env
-
 import pandas as pd
 import os
 import sqlite3
 
 #------------------------------------------------------------------------------------------
-#-------------------------------------- FUNCTIONS(+ Mappings) -----------------------------
+#--------------------------------------    FUNCTIONS     ----------------------------------
 #------------------------------------------------------------------------------------------
+
+#-------------------------------------   FILE FETCHER     ---------------------------------
 def file_ftp_fetcher(db_path):
     #power files
     conn = sqlite3.connect(db_path)
     query_power = (""" SELECT threshold_power, source_file FROM Ritten 
-                WHERE activity_type = 'WIELRENNEN' AND avg_power > 0
+                WHERE activity_cat = 'cycling' AND avg_power > 0
                 """)
     df_power = pd.read_sql(query_power, conn)
     power_files = [os.path.splitext(f)[0] + '.parquet' for f in df_power['source_file']]
@@ -29,6 +24,7 @@ def file_ftp_fetcher(db_path):
     
     return power_files, ftp_dict
 
+#---------------------------------------   NORM POWER     -------------------------------
 def get_np(power_series):
     if len(power_series) < 30:
         return power_series.mean()
@@ -36,6 +32,7 @@ def get_np(power_series):
     moving_avg = power_series.rolling(window=30, min_periods=1).mean()
     return (moving_avg**4).mean()**0.25
 
+#---------------------------------------   DECOUPLING     -------------------------------
 def calc_decoup(interval):
     half = len(interval) // 2
     
@@ -57,7 +54,8 @@ def calc_decoup(interval):
     decoupling = ((ef1 - ef2) / ef1) * 100
     
     return decoupling
-    
+
+#----------------------------------      INTERVAL DETECTOR     -------------------------
 def detect_intervals(df):
     # ---- Micro-coast buffer ----
     df['temp_id'] = df['is_werkblok'].diff().ne(0).cumsum()
@@ -79,6 +77,7 @@ def detect_intervals(df):
         avg_power = ('power', 'mean'),
         starttijd = ('timestamp', 'first')
     )
+    all_blocks[['cadence', 'avg_hr', 'avg_power']] = all_blocks[['cadence', 'avg_hr', 'avg_power']].round(3)
     
     all_blocks['rest'] = all_blocks['duur'].shift(-1)
     
@@ -86,6 +85,7 @@ def detect_intervals(df):
         'np_power': get_np(x['power']),
         'decoupling': calc_decoup(x),
     }))
+    custom_metrics[['np_power', 'decoupling']] = custom_metrics[['np_power', 'decoupling']].round(3)
     
     all_intervals = pd.concat([all_blocks, custom_metrics], axis=1)
     all_intervals['EF'] = all_intervals['np_power'] / all_intervals['avg_hr']
@@ -94,6 +94,7 @@ def detect_intervals(df):
     
     return all_intervals
 
+#----------------------------------      INTERVAL MAPPER     --------------------------
 def intervals_mapper(row, ftp):
     intensity = row['avg_power'] / ftp
     duur = row['duur']
@@ -121,6 +122,8 @@ def intervals_mapper(row, ftp):
     if 0.55 <= intensity <= 0.75999: return "Z2 (Unclassified)"
     
     return "Z1/Coast (Unclassified)"    
+
+#----------------------------------      INTERVAL DICTIONARY    -----------------------
 
 interval_mapping = {
     # ==========================================
@@ -184,37 +187,37 @@ interval_mapping = {
         "watts_range": (0.95, 1.05999),
         "duration_range": (120, 3600),   
         "rest_range": (0, 99999),         
-        "cadence_range": (0, 250)       # Ook hier verlaagd voor de zekerheid
+        "cadence_range": (0, 250)       
     },
     "Sweet_Spot": {
         "watts_range": (0.85, 0.94999),     
         "duration_range": (120, 7200),   
         "rest_range": (0, 99999),         
-        "cadence_range": (0, 250)       # Vrij baan voor de stoempers!
+        "cadence_range": (0, 250)       
     },
     "Tempo": {
         "watts_range": (0.76, 0.84999),
         "duration_range": (120, 7200),   
-        "rest_range": (0, 99999),        # Geen limiet meer op de rust!
+        "rest_range": (0, 99999),      
         "cadence_range": (0, 250)       
     },
     # ==========================================
     # 4. ENDURANCE / BASE (Z2 - Z1)
     # ==========================================
     "Z2_Decoupling_Block": {
-        "watts_range": (0.55, 0.75999),     # Jouw Z2 range
-        "duration_range": (2400, 99999), # Vanaf 40 minuten!
+        "watts_range": (0.55, 0.75999),    
+        "duration_range": (2400, 99999), 
         "rest_range": (0, 99999),
         "cadence_range": (60, 250)
     },
     "Z2_Endurance": {
         "watts_range": (0.55, 0.75999),
-        "duration_range": (0, 2399),     # Korter dan 40 minuten
+        "duration_range": (0, 2399),    
         "rest_range": (0, 99999),
         "cadence_range": (60, 250)
     },
     # ==========================================
-    # 5.SURGE CATEGORIES (PHYSIOLOGIC BANTER)
+    # 5.SURGE CATEGORIES
     # ==========================================
     "Anaerobic_Surge": {
         "watts_range": (1.21, 3.0),
@@ -225,7 +228,7 @@ interval_mapping = {
     "VO2_Surge": {
         "watts_range": (1.06, 1.20999),
         "duration_range": (0, 119),     
-        "rest_range": (0, 99999),       #
+        "rest_range": (0, 99999),       
         "cadence_range": (0, 250)
     },
     "Threshold_Surge": {
@@ -236,28 +239,28 @@ interval_mapping = {
     },
     "Sweet_Spot_Surge": {
         "watts_range": (0.85, 0.94999),  
-        "duration_range": (0, 119),   # AANGEPAST
+        "duration_range": (0, 119),   
         "rest_range": (0, 99999),        
         "cadence_range": (0, 250)     
     },
     "Tempo_Surge": {
         "watts_range": (0.76, 0.84999),
-        "duration_range": (0, 119),     # AANGEPAST
+        "duration_range": (0, 119),   
         "rest_range": (0, 99999),
         "cadence_range": (0, 250)       
     }
 }
-# ------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------
 # ------------------------------------- MAIN LOOP -----------------------------------------
-# ------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------
 
-#--- INITIATE ---
+#------------------------------------    INITIATE    --------------------------------------
 db_path = 'overview.sqlite'
 parquet_folder = 'parquet_files'
 
 files, ftp_dict = file_ftp_fetcher(db_path)
 
-#--- UPDATE POWER FILES --- 
+#--------------------------------------      PROC    ---------------------------------------
 print(f"Start processing {len(files)}  power files \n\n")
 
 all_interval_dfs = []
@@ -266,9 +269,7 @@ for idx, file in enumerate(files):
     print(f"Bezig met     file {idx}    van    {len(files)}   files...")
     
     base_file = os.path.splitext(file)[0]
-    ftp = ftp_dict.get(base_file)
-    if ftp is None:
-        continue
+    ftp = ftp_dict.get(base_file) or 250
     
     full_path = os.path.join(parquet_folder, file)
     
@@ -286,12 +287,12 @@ else:
     df_sql_intervals = pd.DataFrame()
     
 # ------------------------------------------------------------------------------------------
-# ------------------------------ UPDATE OVERVIEW.sqlite ------------------------------
+# ---------------------------------- UPDATE OVERVIEW.sqlite --------------------------------
 # ------------------------------------------------------------------------------------------
 
 print("\nAlle bestanden verwerkt. Bezig met updaten van de database....")
 
-conn = sqlite3.connect('overview.sqlite')
+conn = sqlite3.connect(db_path)
 
 df_sql_intervals.to_sql('intervals', conn, if_exists='replace', index=False)
 
